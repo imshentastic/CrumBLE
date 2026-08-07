@@ -339,13 +339,17 @@ void ParsedText::addWord(std::string word, const EpdFontFamily::Style fontStyle,
 
   // --- FOCUS READING LOGIC BELOW ---
 
-  // Pre-reserve capacity to prevent mid-word heap reallocations.
-  size_t maxPossibleNewTokens = word.length();
-  size_t requiredSize = words.size() + maxPossibleNewTokens;
+  // Pre-reserve capacity to prevent mid-word heap reallocations. `words` is a
+  // std::deque now (see the header) so it has no reserve()/capacity() and needs
+  // none -- it grows in chunks and never moves what it already holds. The
+  // parallel arrays are still vectors and still benefit, so drive their growth
+  // off the deque's size instead.
+  const size_t maxPossibleNewTokens = word.length();
+  const size_t requiredSize = words.size() + maxPossibleNewTokens;
 
-  if (words.capacity() < requiredSize) {
+  if (wordStyles.capacity() < requiredSize) {
     // Emulate standard geometric growth (doubling) to ensure we don't reallocate on every word.
-    size_t newCapacity = words.capacity() * 2;
+    size_t newCapacity = wordStyles.capacity() * 2;
 
     // Ensure the doubled capacity is actually enough for this specific word
     if (newCapacity < requiredSize) {
@@ -356,7 +360,6 @@ void ParsedText::addWord(std::string word, const EpdFontFamily::Style fontStyle,
       newCapacity = 16;
     }
 
-    words.reserve(newCapacity);
     wordStyles.reserve(newCapacity);
     wordContinues.reserve(newCapacity);
     wordNoSpaceBefore.reserve(newCapacity);

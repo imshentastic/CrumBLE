@@ -2,6 +2,7 @@
 
 #include <EpdFontFamily.h>
 
+#include <deque>
 #include <functional>
 #include <memory>
 #include <string>
@@ -13,7 +14,16 @@
 class GfxRenderer;
 
 class ParsedText {
-  std::vector<std::string> words;
+  // std::deque, not std::vector. Ported from crosspoint feat-bluetooth
+  // 200abc6aa. A vector of N tokens needs N * sizeof(std::string) in ONE
+  // contiguous block, and a CJK chapter tokenises to thousands of them (each
+  // ideograph is its own token so lines can wrap between characters) -- tens to
+  // well over a hundred KB, which cannot be allocated on a fragmented heap with
+  // NimBLE resident. A deque grows in small chunks, so the largest single
+  // allocation stays bounded no matter how many tokens a chapter produces.
+  // The parallel arrays below stay vectors: their elements are 1-2 bytes, so
+  // even a huge chapter keeps them small.
+  std::deque<std::string> words;
   std::vector<EpdFontFamily::Style> wordStyles;
   std::vector<bool> wordContinues;       // true = word attaches to previous with no break and no space
   std::vector<bool> wordNoSpaceBefore;   // true = may break before token, but no synthetic space when joined
