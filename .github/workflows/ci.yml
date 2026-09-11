@@ -119,6 +119,25 @@ jobs:
       - name: Install PlatformIO Core
         run: uv pip install --system -U https://github.com/pioarduino/platformio-core/archive/refs/tags/v6.1.19.zip
 
+      # The prebake .js factory MUST be embedded in firmware. The optimizer's
+      # worker does importScripts(location.origin + '/js/crumble-prebake.js')
+      # with no CDN fallback (unlike the .wasm, which resolvePrebakeWasm() can
+      # pull from jsDelivr), so a build without it serves 404 there and every
+      # on-device "Optimize EPUB" dies. scripts/embed_wasm.py now fails the
+      # build rather than skipping silently, which makes this step required.
+      #
+      # It doubles as a compile check for tools/crumble-prebake: that tool
+      # shares lib/ with the firmware, so a signature change there (e.g.
+      # ParsedText's token container) breaks it invisibly otherwise.
+      - name: Set up Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: latest
+          actions-cache-folder: emsdk-cache
+
+      - name: Build prebake WASM
+        run: bash tools/crumble-prebake/build-wasm.sh
+
       - name: Build CrossInk
         run: |
           set -euo pipefail

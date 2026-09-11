@@ -47,10 +47,26 @@ def embed(src_path: Path, identifier: str) -> None:
         compressed = b""
         original_size = 0
     elif not src_path.exists():
-        # The WASM build is optional -- if the developer hasn't run
-        # tools/crumble-prebake/build-wash.sh, emit a tiny stub header
-        # so the firmware still compiles. The /js/crumble-prebake.*
-        # handlers will return 404 at runtime via a zero-length check.
+        # The .js factory is NOT optional: the optimizer's worker does a hard
+        # importScripts(location.origin + '/js/crumble-prebake.js') with no CDN
+        # fallback (unlike the .wasm, which resolvePrebakeWasm() can fetch from
+        # jsDelivr). A firmware built without it serves 404 there and every
+        # on-device prebake dies with "Failed to execute 'importScripts'".
+        #
+        # That used to happen silently: the build printed one skip line and
+        # produced a working-looking binary whose Optimize EPUB flow was dead.
+        # Nothing surfaced it until a user tried to bake a book. Fail the build
+        # instead -- a missing load-bearing asset is not a warning.
+        if identifier == "CrumblePrebakeJs" and os.environ.get("CRUMBLE_ALLOW_MISSING_WASM") != "1":
+            raise SystemExit(
+                f"[embed_wasm] FATAL: {src_path} is missing.\n"
+                f"  The prebake JS factory must be embedded or on-device\n"
+                f"  'Optimize EPUB' will fail at runtime with a 404.\n"
+                f"  Build it:  bash tools/crumble-prebake/build-wasm.sh\n"
+                f"  (requires emscripten; see the script header)\n"
+                f"  To build firmware without prebake support anyway:\n"
+                f"    CRUMBLE_ALLOW_MISSING_WASM=1 pio run -e <env>"
+            )
         print(f"[embed_wasm] skip {src_path.name}: not built yet")
         compressed = b""
         original_size = 0

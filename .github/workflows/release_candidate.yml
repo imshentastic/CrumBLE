@@ -77,6 +77,17 @@ jobs:
           escaped_version=$(printf '%s\n' "$VERSION" | sed 's/[&|]/\\&/g')
           sed -i "s|^crossink_version = .*|crossink_version = ${escaped_version}|" platformio.ini
 
+      # See ci.yml: the prebake .js factory must be embedded or on-device
+      # "Optimize EPUB" 404s at runtime. embed_wasm.py fails the build without it.
+      - name: Set up Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: latest
+          actions-cache-folder: emsdk-cache
+
+      - name: Build prebake WASM
+        run: bash tools/crumble-prebake/build-wasm.sh
+
       - name: Build CrossPoint
         shell: bash
         env:

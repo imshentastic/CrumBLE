@@ -46,6 +46,7 @@
 #include <cstdint>
 #include <map>
 #include <string>
+#include <deque>
 #include <vector>
 
 class FontCacheManager;
@@ -142,7 +143,10 @@ class GfxRenderer {
     if (it == sdCardFonts_.end() || !utf8Text) return;
     it->second->buildAdvanceTable(utf8Text, styleMask);
   }
-  void ensureSdCardFontReady(int fontId, const std::vector<std::string>& words, bool includeHyphen,
+  // Takes a deque to match the firmware signature -- ParsedText holds its
+  // tokens in a std::deque (see lib/Epub/Epub/ParsedText.h) so a CJK chapter's
+  // thousands of tokens never need one contiguous block.
+  void ensureSdCardFontReady(int fontId, const std::deque<std::string>& words, bool includeHyphen,
                              uint8_t styleMask = 0x0F) const {
     auto it = sdCardFonts_.find(fontId);
     if (it == sdCardFonts_.end()) return;
