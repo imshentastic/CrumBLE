@@ -4,7 +4,12 @@
 
 ## [crumble-v4.7.4] - 2026-10-05
 
-Single firmware: `crumble-v4.7.4-tiny-bitter.bin` (Bitter built-in, fits the stock 6.25 MB slot for SD-card flashing).
+Two firmwares, both flashable to the stock 6.25 MB slot from the SD card:
+
+- `crumble-firmware-4.7.4.bin` — the main build (Bitter built-in). Chinese needs an SD-card font.
+- `crumble-firmware-chinese-4.7.4.bin` — the Chinese variant, with a Chinese face baked into firmware so it works alongside Bluetooth and needs no SD font. See the first entry under Added.
+
+The two are not interchangeable: a device on one only ever updates to the other's matching asset, so pick the right file when flashing manually.
 
 ### Added
 - **New `tiny-bitter-chinese-fallback` firmware variant: Chinese reading with Bluetooth, no SD font required.** A separate build (`crumble-firmware-chinese-*.bin`, flashable to the stock 6.25 MB slot like the main build) bakes a Chinese font (LXGW WenKai, 8,846 hanzi -- GB2312 for simplified plus Big5 level 1 for traditional -- with hiragana/katakana, CJK punctuation and fullwidth forms) directly into firmware flash. Simplified and traditional both work with no setting to choose between them: the baked face is consulted by character, so a traditional book asks for 學 and a simplified one asks for 学, and a book mixing the two renders correctly on the same line. Glyphs render memory-mapped with zero heap and zero SD reads, so the BLE page-turner works while reading CJK books — the combination that the SD-card `.cpfont` path could never sustain on this hardware's heap budget. The baked face acts as an automatic fallback: keep Bitter selected, and any character Bitter lacks (hanzi, kana, fullwidth punctuation) renders from the CJK face, in books and in UI labels/titles alike. It is baked at 14pt, whose metrics match built-in Bitter 14 exactly, so hanzi sit at the same visual size as surrounding Latin and mixed lines need no extra leading. OPDS, Calibre, QR, and KOReader sync all remain included. Variant trade-offs: italic/bold-italic render as regular/bold, CJK renders at one fixed size (Latin keeps all sizes), and non-English hyphenation patterns are dropped (English kept; CJK needs none). OTA is variant-aware: a Chinese-fallback device only ever updates to `-cjk-` release assets, and the main firmware explicitly refuses them.
